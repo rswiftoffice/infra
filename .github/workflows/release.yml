@@ -46,7 +46,10 @@ jobs:
           version: "~> v2"
           args: release --clean
         env:
-          GITHUB_TOKEN: ${{ secrets.PUBLISHER_TOKEN }}
+          # Built-in token creates the GitHub release on this repo
+          # (job has contents: write). The PAT is scoped to the tap only.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAP_GITHUB_TOKEN: ${{ secrets.PUBLISHER_TOKEN }}
 
   notify-slack:
     needs: goreleaser

@@ -26,6 +26,7 @@ brews:
     repository:
       owner: rswiftoffice
       name: homebrew-infra
+      token: "{{ .Env.TAP_GITHUB_TOKEN }}"
     commit_author:
       name: OliverTeo288
       email: oliverteo288@gmail.com
