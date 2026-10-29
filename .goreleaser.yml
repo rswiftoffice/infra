@@ -22,13 +22,13 @@ universal_binaries:
 brews:
   -
     name: infra
-    homepage: "https://github.com/oliverteo288/infra"
+    homepage: "https://github.com/rswiftoffice/infra"
     repository:
-      owner: oliverteo288
+      owner: rswiftoffice
       name: homebrew-infra
     commit_author:
-      name: oliverteo288
-      email: oliver_teo288@hotmail.com
+      name: OliverTeo288
+      email: oliverteo288@gmail.com
 
 checksum:
   name_template: 'checksums.txt'

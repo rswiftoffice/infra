@@ -17,8 +17,8 @@ All commands support `--log-format json|text` and `--log-level debug|info|warn|e
 To install the `infra` CLI via Homebrew, use the following commands:
 
 ```bash
-brew tap oliverteo288/infra
-brew install oliverteo288/infra/infra
+brew tap rswiftoffice/infra
+brew install rswiftoffice/infra/infra
 ```
 
 ### Supported Architectures
