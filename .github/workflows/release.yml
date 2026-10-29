@@ -44,6 +44,19 @@ jobs:
           echo "GITLAB_SSH_DOMAIN=${{ secrets.GITLAB_SSH_DOMAIN }}" >> $GITHUB_ENV
           echo "COMMON_AWS_ACCOUNT_ID=${{ secrets.COMMON_AWS_ACCOUNT_ID }}" >> $GITHUB_ENV
           echo "OIDC_SUBJECT_PATTERN=${{ secrets.OIDC_SUBJECT_PATTERN }}" >> $GITHUB_ENV
+      # GITHUB_TOKEN can only touch this repo, so the Homebrew tap push needs
+      # its own credential. A GitHub App installation token is short-lived
+      # (1 hour), org-owned (no personal PAT), and limited to the tap repo
+      # with Contents: write only.
+      - name: Create tap push token (GitHub App)
+        id: tap-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.TAP_APP_CLIENT_ID }}
+          private-key: ${{ secrets.TAP_APP_PRIVATE_KEY }}
+          owner: rswiftoffice
+          repositories: homebrew-infra
+          permission-contents: write
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
@@ -54,9 +67,9 @@ jobs:
           args: release --clean
         env:
           # Built-in token creates the GitHub release on this repo
-          # (job has contents: write). The PAT is scoped to the tap only.
+          # (job has contents: write). The App token is scoped to the tap only.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAP_GITHUB_TOKEN: ${{ secrets.PUBLISHER_TOKEN }}
+          TAP_GITHUB_TOKEN: ${{ steps.tap-token.outputs.token }}
 
   notify-slack:
     needs: goreleaser

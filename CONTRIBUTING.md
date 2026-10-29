@@ -104,11 +104,29 @@ git push --tags
 The `release` workflow then builds via goreleaser and publishes to the
 homebrew tap automatically.
 
-The release pipeline reads four GitHub Actions secrets:
+The release pipeline reads these GitHub Actions secrets:
 
-| Secret                  | Purpose                                   |
-| ----------------------- | ----------------------------------------- |
-| `GITLAB_HTTPS_DOMAIN`   | HTTPS clone URL for the template repo     |
-| `GITLAB_SSH_DOMAIN`     | SSH clone URL for the template repo      |
-| `COMMON_AWS_ACCOUNT_ID` | Account ID hosting cross-account ECR      |
-| `OIDC_SUBJECT_PATTERN`  | GitLab JWT `sub` pattern for trust policy |
+| Secret                  | Purpose                                              |
+| ----------------------- | ---------------------------------------------------- |
+| `GITLAB_HTTPS_DOMAIN`   | HTTPS clone URL for the template repo                |
+| `GITLAB_SSH_DOMAIN`     | SSH clone URL for the template repo                  |
+| `COMMON_AWS_ACCOUNT_ID` | Account ID hosting cross-account ECR                 |
+| `OIDC_SUBJECT_PATTERN`  | GitLab JWT `sub` pattern for trust policy            |
+| `TAP_APP_CLIENT_ID`     | Client ID of the GitHub App that pushes the tap      |
+| `TAP_APP_PRIVATE_KEY`   | Private key (`.pem` contents) of that GitHub App     |
+| `SLACK_WEBHOOK`         | Slack webhook for release announcements              |
+
+### Homebrew tap credentials (GitHub App)
+
+`GITHUB_TOKEN` only reaches this repo, so pushing the formula to
+`rswiftoffice/homebrew-infra` uses a GitHub App installation token. The
+workflow mints a 1-hour token limited to `homebrew-infra` with
+`Contents: Read and write`. No personal access token is involved.
+
+To recreate the App: org Settings, Developer settings, GitHub Apps, New.
+Webhook off, repository permission Contents: Read and write, installable
+on this org only. Install it on `homebrew-infra` only, generate a private
+key, and store the Client ID and key as the two secrets above.
+
+Test the Slack webhook without building:
+`gh workflow run release.yml --ref main -f slack_test=true`
