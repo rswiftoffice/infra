@@ -13,14 +13,21 @@ on:
     tags:
       - "[0-9]+.[0-9]+.[0-9]+"
       - "[0-9]+.[0-9]+.[0-9]+-*"
-  # Allow manual runs for one-off snapshot builds.
+  # Allow manual runs. Set slack_test=true to skip the build and only send a
+  # clearly labelled [TEST] message to the release webhook.
   workflow_dispatch:
+    inputs:
+      slack_test:
+        description: "Only send a [TEST] Slack notification (skips the build)"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
 
 jobs:
   goreleaser:
+    if: ${{ !inputs.slack_test }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -54,20 +61,32 @@ jobs:
   notify-slack:
     needs: goreleaser
     runs-on: ubuntu-latest
-    if: success()
+    # Runs after a successful release, or alone when goreleaser was skipped
+    # for a slack_test dispatch. A failed release never announces.
+    if: ${{ !cancelled() && (needs.goreleaser.result == 'success' || needs.goreleaser.result == 'skipped') }}
     steps:
       - name: Send Slack Notification
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           CI_PROJECT_NAME: ${{ github.repository }}
-          CI_COMMIT_TAG: ${{ github.ref_name }}
-          CI_COMMIT_TAG_MESSAGE: ${{ github.event.head_commit.message }}
+          CI_COMMIT_TAG: ${{ inputs.slack_test && '[TEST]' || github.ref_name }}
+          CI_COMMIT_TAG_MESSAGE: ${{ inputs.slack_test && '[TEST] webhook check, ignore' || github.event.head_commit.message || format('Release {0}', github.ref_name) }}
         run: |
           # Use jq to JSON-encode the payload so untrusted commit messages
           # can't break the JSON or smuggle escape sequences into curl args.
-          jq -nc \
+          payload=$(jq -nc \
             --arg project "$CI_PROJECT_NAME" \
             --arg tag "$CI_COMMIT_TAG" \
             --arg message "$CI_COMMIT_TAG_MESSAGE" \
-            '{CI_PROJECT_NAME: $project, CI_COMMIT_TAG: $tag, CI_COMMIT_TAG_MESSAGE: $message}' \
-          | curl -sS -X POST -H "Content-type: application/json" --data-binary @- "$SLACK_WEBHOOK"
+            '{CI_PROJECT_NAME: $project, CI_COMMIT_TAG: $tag, CI_COMMIT_TAG_MESSAGE: $message}')
+
+          # Fail the job on a non-2xx response so a bad webhook can't look green.
+          status=$(curl -sS -o /tmp/slack-response.txt -w '%{http_code}' \
+            -X POST -H "Content-type: application/json" \
+            --data-binary "$payload" "$SLACK_WEBHOOK")
+          echo "Slack responded HTTP $status"
+          cat /tmp/slack-response.txt; echo
+          case "$status" in
+            2*) ;;
+            *) echo "::error::Slack webhook rejected the request (HTTP $status)"; exit 1 ;;
+          esac

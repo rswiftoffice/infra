@@ -5,12 +5,22 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
 
 	"raid/infra/internal/observability"
 
 	"github.com/spf13/cobra"
+)
+
+// Build metadata, injected at release time via -ldflags -X (see
+// .goreleaser.yml and scripts/build-local.sh). The defaults identify an
+// unstamped `go build` / `go run`.
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
 )
 
 var (
@@ -20,6 +30,7 @@ var (
 
 var rootCmd = &cobra.Command{
 	Use:           "infra",
+	Version:       fmt.Sprintf("%s (commit %s, built %s)", version, commit, date),
 	Short:         "AWS CLI to make infrastructure management easier",
 	Long:          "infra is a workflow CLI that wraps common AWS operations: port-forwarding into private RDS via ECS or EC2, ECS exec sessions, Terraform GitOps role + state bucket bootstrap, and cross-account ECR roles.",
 	SilenceUsage:  true,

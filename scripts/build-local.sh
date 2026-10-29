@@ -37,10 +37,18 @@ build() {
   info "  CommonAWSAccountID = ${INFRA_COMMON_AWS_ACCOUNT_ID}"
   info "  OIDCSubjectPattern = ${INFRA_OIDC_SUB}"
 
+  local build_version build_commit build_date
+  build_version="$(git describe --tags --always --dirty 2>/dev/null || echo dev)"
+  build_commit="$(git rev-parse --short HEAD 2>/dev/null || echo none)"
+  build_date="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
   # -s -w strips debug symbols + DWARF, matching what goreleaser produces;
   # roughly halves the binary size.
   go build \
     -ldflags "-s -w \
+      -X 'raid/infra/cmd.version=${build_version}' \
+      -X 'raid/infra/cmd.commit=${build_commit}' \
+      -X 'raid/infra/cmd.date=${build_date}' \
       -X 'raid/infra/internal/config.GitlabHTTPSDomain=${INFRA_GITLAB_HTTPS_DOMAIN}' \
       -X 'raid/infra/internal/config.GitlabSSHDomain=${INFRA_GITLAB_SSH_DOMAIN}' \
       -X 'raid/infra/internal/config.CommonAWSAccountID=${INFRA_COMMON_AWS_ACCOUNT_ID}' \

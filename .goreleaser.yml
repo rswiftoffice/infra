@@ -5,6 +5,9 @@ builds:
       - '-X "raid/infra/internal/config.GitlabSSHDomain={{ .Env.GITLAB_SSH_DOMAIN }}"'
       - '-X "raid/infra/internal/config.CommonAWSAccountID={{ .Env.COMMON_AWS_ACCOUNT_ID }}"'
       - '-X "raid/infra/internal/config.OIDCSubjectPattern={{ .Env.OIDC_SUBJECT_PATTERN }}"'
+      - '-X "raid/infra/cmd.version={{ .Version }}"'
+      - '-X "raid/infra/cmd.commit={{ .ShortCommit }}"'
+      - '-X "raid/infra/cmd.date={{ .Date }}"'
     env:
       - CGO_ENABLED=0
     goos:
